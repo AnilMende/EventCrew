@@ -59,7 +59,7 @@ const userSchema = new Schema<IUser>(
     },
     { timestamps : true }
 );
-
-const existingUserModel = models.User as Model<IUser> | "undefined";
-
-export const UserModel = existingUserModel ?? model<IUser>("User", userSchema);
+// Look into the global registry to see if the 'User' model already exists.
+// If it does, reuse it and type it properly.
+// If it doesn't exist yet, create a brand new one using our schema definition.
+export const UserModel = (models.User as Model<IUser>) || model<IUser>("User", userSchema);
