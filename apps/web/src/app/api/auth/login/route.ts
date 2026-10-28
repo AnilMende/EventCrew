@@ -102,29 +102,33 @@ export const POST = async (request: NextRequest) => {
 
         // create a long lived refresh token
 
+
         const sessionId = randomUUID();
 
         const refreshToken = await new SignJWT({
-            tokenType: "refresh"
+            tokenType: "refresh",
+            sid: sessionId,
         })
             .setProtectedHeader({ alg: "HS256" })
             .setSubject(user._id.toString())
+            .setJti(randomUUID())
             .setIssuer("eventcrew")
             .setAudience("eventcrew")
             .setIssuedAt()
             .setExpirationTime("7d")
             .sign(refreshKey);
 
+
         const tokenHash = createHash("sha256")
             .update(refreshToken)
             .digest("hex");
 
         await RefreshSessionModel.create({
-            userId : user._id.toString(),
+            userId: user._id.toString(),
             sessionId,
             tokenHash,
-            expiresAt : new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
-            revokedAt : null
+            expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
+            revokedAt: null
         });
 
         // Return a safe user object and set HTTP-only cookies
@@ -143,12 +147,13 @@ export const POST = async (request: NextRequest) => {
             { status: 200 }
         );
 
-        response.cookies.set("eventcrew_acess", accessToken, {
+
+        response.cookies.set("eventcrew_access", accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
-            maxAge: ACCESS_TOKEN_TTL
+            maxAge: ACCESS_TOKEN_TTL,
         });
 
         response.cookies.set("eventcrew_refresh", refreshToken, {
